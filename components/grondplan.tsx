@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { getFloorPlanFromUrl, saveFloorPlan, updateFloorPlan } from '@/lib/utils';
 
 type Item = {
   id: string;
@@ -16,7 +17,7 @@ type Item = {
 
 type Side = 'A' | 'B' | 'C' | 'D';
 
-type FloorplanData = {
+export type FloorplanData = {
   naam: string;
   breedte: number;
   lengte: number;
@@ -43,7 +44,7 @@ const itemDefaults = {
   Raamkozijn: { breedte: 2000, diepte: 250 },
 };
 
-export default function Grondplan({ initialFloorplan = defaultFloorplan }: { initialFloorplan?: FloorplanData }) {
+export default function Grondplan({ initialFloorplan = defaultFloorplan, userId }: { initialFloorplan?: FloorplanData, userId?: string }) {
   const [floorplan, setFloorplan] = useState<FloorplanData>(initialFloorplan);
   const [scale, setScale] = useState(1);
   const [selectedSide, setSelectedSide] = useState<Side>('A');
@@ -56,6 +57,7 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
   const padding = 3000;
   const svgWidth = floorplan.breedte + padding * 2;
   const svgHeight = floorplan.lengte + padding * 2;
+  const userIdFromParam = userId ?? '';
 
   useEffect(() => {
     const containerWidth = window.innerWidth * 0.9;
@@ -256,13 +258,11 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
       afstandNaarLinks: newItemDistance,
     };
 
-    setFloorplan(prev => ({
-      ...prev,
-      items: {
-        ...prev.items,
-        [selectedSide]: [...prev.items[selectedSide], newItem],
-      },
-    }));
+    const floorPlan = {...floorplan, items: {
+      ...floorplan.items, [selectedSide]: [...floorplan.items[selectedSide], newItem]
+    }};
+    setFloorplan(floorPlan);
+    updateFloorPlan(userIdFromParam, floorPlan);
 
     // Reset form
     setNewItemName('');
@@ -289,21 +289,31 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
       afstandNaarLinks: newItemDistance,
     };
 
-    setFloorplan(prev => ({
-      ...prev,
-      items: {
-        ...prev.items,
-        [selectedSide]: prev.items[selectedSide].map(item =>
-          item.id === editingItem.id ? updatedItem : item
-        ),
-      },
-    }));
+    const updatedFloorPlan = {...floorplan, items: {
+      ...floorplan.items, [selectedSide]: floorplan?.items?.[selectedSide]?.map(item =>
+        item?.id === editingItem?.id ? updatedItem : item
+      ),
+    }};
+    setFloorplan(updatedFloorPlan);
+    updateFloorPlan(userIdFromParam, updatedFloorPlan);
 
     setEditingItem(null);
     setNewItemName('');
     setNewItemWidth(itemDefaults[newItemType].breedte);
     setNewItemDistance(0);
   };
+
+  useEffect(() => {
+    const doesExist = getFloorPlanFromUrl(userIdFromParam);
+    if (!doesExist) {
+      saveFloorPlan(userIdFromParam, defaultFloorplan);
+      setFloorplan(defaultFloorplan);
+    } else {
+      if (JSON.stringify(doesExist) !== JSON.stringify(floorplan)) {
+        setFloorplan(doesExist);
+      }
+    }
+  }, [])
 
   const handleDeleteItem = (itemId: string) => {
     setFloorplan(prev => ({
@@ -323,7 +333,11 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
           <Input
             id="naam"
             value={floorplan.naam}
-            onChange={(e) => setFloorplan(prev => ({ ...prev, naam: e.target.value }))}
+            onChange={(e) => {
+              const updatedFloorPlan = { ...floorplan, naam: e?.target?.value };
+              setFloorplan(updatedFloorPlan)
+              updateFloorPlan(userIdFromParam, updatedFloorPlan);
+            }}
             className="mt-1"
           />
         </div>
@@ -333,7 +347,11 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
             id="breedte"
             type="number"
             value={floorplan.breedte}
-            onChange={(e) => setFloorplan(prev => ({ ...prev, breedte: Number(e.target.value) }))}
+            onChange={(e) => {
+              const updatedFloorPlan = { ...floorplan, breedte: Number(e?.target?.value) };
+              setFloorplan(updatedFloorPlan);
+              updateFloorPlan(userIdFromParam, updatedFloorPlan);
+            }}
             className="mt-1"
           />
         </div>
@@ -343,9 +361,13 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
             id="lengte"
             type="number"
             value={floorplan.lengte}
-            onChange={(e) => setFloorplan(prev => ({ ...prev, lengte: Number(e.target.value) }))}
+            onChange={(e) => {
+              const updatedFloorPlan = { ...floorplan, lengte: Number(e?.target?.value) };
+              setFloorplan(updatedFloorPlan);
+              updateFloorPlan(userIdFromParam, updatedFloorPlan);
+            }}
             className="mt-1"
-          />
+            />
         </div>
         <div>
           <Label htmlFor="breedteStaalstructuur" className="text-sm font-medium text-gray-700">Breedte staalstructuur (mm)</Label>
@@ -353,7 +375,11 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
             id="breedteStaalstructuur"
             type="number"
             value={floorplan.breedteStaalstructuur}
-            onChange={(e) => setFloorplan(prev => ({ ...prev, breedteStaalstructuur: Number(e.target.value) }))}
+            onChange={(e) => {
+              const updatedFloorPlan = { ...floorplan, breedteStaalstructuur: Number(e.target.value)};
+              setFloorplan(updatedFloorPlan);
+              updateFloorPlan(userIdFromParam, updatedFloorPlan);
+            }}
             className="mt-1"
           />
         </div>
