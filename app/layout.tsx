@@ -1,3 +1,4 @@
+import Nav from '@/components/nav'
 import '@/styles/globals.css'
 import { Inter } from 'next/font/google'
 
@@ -15,11 +16,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <Nav />
+        <div className='pt-20'>
+          {children}
+        </div>
+      </body>
     </html>
   )
 }
-
-
-
-import './globals.css'
