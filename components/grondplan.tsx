@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { getFloorPlanFromUrl, saveFloorPlan, updateFloorPlan } from '@/lib/utils';
+import { useRouter } from "next/navigation";
 
 type Item = {
   id: string;
@@ -16,12 +18,21 @@ type Item = {
 
 type Side = 'A' | 'B' | 'C' | 'D';
 
-type FloorplanData = {
+export type FloorplanData = {
   naam: string;
   breedte: number;
   lengte: number;
   breedteStaalstructuur: number;
   items: Record<Side, Item[]>;
+};
+
+export type GetFloorplanData = {
+  naam: string;
+  breedte: number;
+  lengte: number;
+  breedteStaalstructuur: number;
+  items: Record<Side, Item[]>;
+  id: number;
 };
 
 const defaultFloorplan: FloorplanData = {
@@ -43,7 +54,8 @@ const itemDefaults = {
   Raamkozijn: { breedte: 2000, diepte: 250 },
 };
 
-export default function Grondplan({ initialFloorplan = defaultFloorplan }: { initialFloorplan?: FloorplanData }) {
+export default function Grondplan({ initialFloorplan = defaultFloorplan, userId }: { initialFloorplan?: FloorplanData, userId?: string }) {
+  const router = useRouter();
   const [floorplan, setFloorplan] = useState<FloorplanData>(initialFloorplan);
   const [scale, setScale] = useState(1);
   const [selectedSide, setSelectedSide] = useState<Side>('A');
@@ -54,8 +66,9 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
   const [editingItem, setEditingItem] = useState<Item | null>(null);
 
   const padding = 3000;
-  const svgWidth = floorplan.breedte + padding * 2;
-  const svgHeight = floorplan.lengte + padding * 2;
+  const svgWidth = floorplan?.breedte + padding * 2;
+  const svgHeight = floorplan?.lengte + padding * 2;
+  const userIdFromParam = userId ?? '';
 
   useEffect(() => {
     const containerWidth = window.innerWidth * 0.9;
@@ -63,7 +76,7 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
     const scaleX = containerWidth / svgWidth;
     const scaleY = containerHeight / svgHeight;
     setScale(Math.min(scaleX, scaleY, 1));
-  }, [floorplan.breedte, floorplan.lengte, svgWidth, svgHeight]);
+  }, [floorplan?.breedte, floorplan?.lengte, svgWidth, svgHeight]);
 
   const scaledWidth = svgWidth * scale;
   const scaledHeight = svgHeight * scale;
@@ -126,11 +139,11 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
   };
 
   const drawMeasurementLines = (side: Side) => {
-    const items = floorplan.items[side];
-    if (items.length === 0) return null;
+    const items = floorplan?.items?.[side];
+    if (items?.length === 0) return null;
 
-    const measurementLines = items.map((item, index) => {
-      const itemColor = item.type === 'Sectionaaldeur' ? 'blue' : item.type === 'Loopdeur' ? 'red' : 'green';
+    const measurementLines = items?.map((item, index) => {
+      const itemColor = item?.type === 'Sectionaaldeur' ? 'blue' : item?.type === 'Loopdeur' ? 'red' : 'green';
       const offset = (index + 1) * 600;
       let lineX1, lineY1, lineX2, lineY2, textX, textY;
       let leftDistance, rightDistance;
@@ -138,39 +151,39 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
       switch (side) {
         case 'A':
           lineX1 = padding;
-          lineX2 = padding + floorplan.breedte;
+          lineX2 = padding + floorplan?.breedte;
           lineY1 = lineY2 = padding - offset;
-          textX = padding + floorplan.breedte / 2;
+          textX = padding + floorplan?.breedte / 2;
           textY = lineY1 - 150;
-          leftDistance = item.afstandNaarLinks;
-          rightDistance = floorplan.breedte - item.afstandNaarLinks - item.breedte;
+          leftDistance = item?.afstandNaarLinks;
+          rightDistance = floorplan?.breedte - item?.afstandNaarLinks - item?.breedte;
           break;
         case 'B':
           lineX1 = lineX2 = svgWidth - padding + offset;
           lineY1 = padding;
-          lineY2 = padding + floorplan.lengte;
+          lineY2 = padding + floorplan?.lengte;
           textX = lineX1 + 150;
-          textY = padding + floorplan.lengte / 2;
-          leftDistance = item.afstandNaarLinks;
-          rightDistance = floorplan.lengte - item.afstandNaarLinks - item.breedte;
+          textY = padding + floorplan?.lengte / 2;
+          leftDistance = item?.afstandNaarLinks;
+          rightDistance = floorplan?.lengte - item?.afstandNaarLinks - item?.breedte;
           break;
         case 'C':
           lineX1 = lineX2 = padding - offset;
           lineY1 = padding;
-          lineY2 = padding + floorplan.lengte;
+          lineY2 = padding + floorplan?.lengte;
           textX = lineX1 - 150;
-          textY = padding + floorplan.lengte / 2;
-          leftDistance = item.afstandNaarLinks;
-          rightDistance = floorplan.lengte - item.afstandNaarLinks - item.breedte;
+          textY = padding + floorplan?.lengte / 2;
+          leftDistance = item?.afstandNaarLinks;
+          rightDistance = floorplan?.lengte - item?.afstandNaarLinks - item?.breedte;
           break;
         case 'D':
           lineX1 = padding;
-          lineX2 = padding + floorplan.breedte;
+          lineX2 = padding + floorplan?.breedte;
           lineY1 = lineY2 = svgHeight - padding + offset;
-          textX = padding + floorplan.breedte / 2;
+          textX = padding + floorplan?.breedte / 2;
           textY = lineY1 + 300;
-          leftDistance = item.afstandNaarLinks;
-          rightDistance = floorplan.breedte - item.afstandNaarLinks - item.breedte;
+          leftDistance = item?.afstandNaarLinks;
+          rightDistance = floorplan?.breedte - item?.afstandNaarLinks - item?.breedte;
           break;
       }
 
@@ -190,10 +203,10 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
             strokeWidth="20"
           />
           <line
-            x1={side === 'A' || side === 'D' ? lineX1 + leftDistance + item.breedte : lineX1}
-            y1={side === 'A' || side === 'D' ? lineY1 : lineY1 + leftDistance + item.breedte}
-            x2={side === 'A' || side === 'D' ? lineX1 + leftDistance + item.breedte : lineX1 + (side === 'C' ? 300 : -300)}
-            y2={side === 'A' || side === 'D' ? lineY1 + (side === 'A' ? 300 : -300) : lineY1 + leftDistance + item.breedte}
+            x1={side === 'A' || side === 'D' ? lineX1 + leftDistance + item?.breedte : lineX1}
+            y1={side === 'A' || side === 'D' ? lineY1 : lineY1 + leftDistance + item?.breedte}
+            x2={side === 'A' || side === 'D' ? lineX1 + leftDistance + item?.breedte : lineX1 + (side === 'C' ? 300 : -300)}
+            y2={side === 'A' || side === 'D' ? lineY1 + (side === 'A' ? 300 : -300) : lineY1 + leftDistance + item?.breedte}
             stroke={itemColor}
             strokeWidth="20"
           />
@@ -213,13 +226,13 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
 
           {/* Item width */}
           <text
-            x={side === 'A' || side === 'D' ? lineX1 + leftDistance + item.breedte / 2 : (side === 'C' ? lineX1 + 150 : lineX1 - 150)}
-            y={side === 'A' || side === 'D' ? (side === 'A' ? lineY1 - 150 : lineY1 + 300) : lineY1 + leftDistance + item.breedte / 2}
+            x={side === 'A' || side === 'D' ? lineX1 + leftDistance + item?.breedte / 2 : (side === 'C' ? lineX1 + 150 : lineX1 - 150)}
+            y={side === 'A' || side === 'D' ? (side === 'A' ? lineY1 - 150 : lineY1 + 300) : lineY1 + leftDistance + item?.breedte / 2}
             textAnchor="middle"
             dominantBaseline="middle"
             fontSize={300}
             fill={itemColor}
-            transform={side === 'B' || side === 'C' ? `rotate(-90, ${side === 'C' ? lineX1 + 150 : lineX1 - 150}, ${lineY1 + leftDistance + item.breedte / 2})` : ''}
+            transform={side === 'B' || side === 'C' ? `rotate(-90, ${side === 'C' ? lineX1 + 150 : lineX1 - 150}, ${lineY1 + leftDistance + item?.breedte / 2})` : ''}
           >
             {item.breedte}
           </text>
@@ -256,26 +269,23 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
       afstandNaarLinks: newItemDistance,
     };
 
-    setFloorplan(prev => ({
-      ...prev,
-      items: {
-        ...prev.items,
-        [selectedSide]: [...prev.items[selectedSide], newItem],
-      },
-    }));
+    const floorPlan = {...floorplan, items: {
+      ...floorplan?.items, [selectedSide]: [...floorplan?.items?.[selectedSide], newItem]
+    }};
+    setFloorplan(floorPlan);
 
     // Reset form
     setNewItemName('');
-    setNewItemWidth(itemDefaults[newItemType].breedte);
+    setNewItemWidth(itemDefaults[newItemType]?.breedte);
     setNewItemDistance(0);
   };
 
   const handleEditItem = (item: Item) => {
     setEditingItem(item);
-    setNewItemType(item.type);
-    setNewItemName(item.naam);
-    setNewItemWidth(item.breedte);
-    setNewItemDistance(item.afstandNaarLinks);
+    setNewItemType(item?.type);
+    setNewItemName(item?.naam);
+    setNewItemWidth(item?.breedte);
+    setNewItemDistance(item?.afstandNaarLinks);
   };
 
   const handleUpdateItem = () => {
@@ -289,30 +299,47 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
       afstandNaarLinks: newItemDistance,
     };
 
-    setFloorplan(prev => ({
-      ...prev,
-      items: {
-        ...prev.items,
-        [selectedSide]: prev.items[selectedSide].map(item =>
-          item.id === editingItem.id ? updatedItem : item
-        ),
-      },
-    }));
+    const updatedFloorPlan = {...floorplan, items: {
+      ...floorplan?.items, [selectedSide]: floorplan?.items?.[selectedSide]?.map(item =>
+        item?.id === editingItem?.id ? updatedItem : item
+      ),
+    }};
+    setFloorplan(updatedFloorPlan);
 
     setEditingItem(null);
     setNewItemName('');
-    setNewItemWidth(itemDefaults[newItemType].breedte);
+    setNewItemWidth(itemDefaults[newItemType]?.breedte);
     setNewItemDistance(0);
   };
 
-  const handleDeleteItem = (itemId: string) => {
-    setFloorplan(prev => ({
-      ...prev,
-      items: {
-        ...prev.items,
-        [selectedSide]: prev.items[selectedSide].filter(item => item.id !== itemId),
-      },
-    }));
+  const handleSaveData = () => {
+    updateFloorPlan(userIdFromParam, floorplan, router);
+  };
+
+  useEffect(() => {
+    const fetchFloorPlan = async () => {
+      if (userIdFromParam) {
+        try {
+          const floorPlanApiData = await getFloorPlanFromUrl(userIdFromParam);
+
+          if (floorPlanApiData) {
+            setFloorplan(floorPlanApiData?.[0] as FloorplanData);
+          }
+        } catch (error) {
+          console.error("❌ Error fetching floor plan:", error);
+        }
+      }
+    };
+  
+    fetchFloorPlan();
+  }, [userIdFromParam]);
+  
+  const handleDeleteItem = (itemId: string, side: Side) => {
+    const floorPlan = {...floorplan, items: {
+      ...floorplan?.items, [side]: floorplan?.items?.[side]?.filter(item => item?.id !== itemId)
+    }};
+    setFloorplan(floorPlan);
+    updateFloorPlan(userIdFromParam, floorPlan, router);
   };
 
   return (
@@ -322,8 +349,11 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
           <Label htmlFor="naam" className="text-sm font-medium text-gray-700">Naam</Label>
           <Input
             id="naam"
-            value={floorplan.naam}
-            onChange={(e) => setFloorplan(prev => ({ ...prev, naam: e.target.value }))}
+            value={floorplan?.naam}
+            onChange={(e) => {
+              const updatedFloorPlan = { ...floorplan, naam: e?.target?.value };
+              setFloorplan(updatedFloorPlan)
+            }}
             className="mt-1"
           />
         </div>
@@ -332,8 +362,11 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
           <Input
             id="breedte"
             type="number"
-            value={floorplan.breedte}
-            onChange={(e) => setFloorplan(prev => ({ ...prev, breedte: Number(e.target.value) }))}
+            value={floorplan?.breedte}
+            onChange={(e) => {
+              const updatedFloorPlan = { ...floorplan, breedte: Number(e?.target?.value) };
+              setFloorplan(updatedFloorPlan);
+            }}
             className="mt-1"
           />
         </div>
@@ -342,18 +375,24 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
           <Input
             id="lengte"
             type="number"
-            value={floorplan.lengte}
-            onChange={(e) => setFloorplan(prev => ({ ...prev, lengte: Number(e.target.value) }))}
+            value={floorplan?.lengte}
+            onChange={(e) => {
+              const updatedFloorPlan = { ...floorplan, lengte: Number(e?.target?.value) };
+              setFloorplan(updatedFloorPlan);
+            }}
             className="mt-1"
-          />
+            />
         </div>
         <div>
           <Label htmlFor="breedteStaalstructuur" className="text-sm font-medium text-gray-700">Breedte staalstructuur (mm)</Label>
           <Input
             id="breedteStaalstructuur"
             type="number"
-            value={floorplan.breedteStaalstructuur}
-            onChange={(e) => setFloorplan(prev => ({ ...prev, breedteStaalstructuur: Number(e.target.value) }))}
+            value={floorplan?.breedteStaalstructuur}
+            onChange={(e) => {
+              const updatedFloorPlan = { ...floorplan, breedteStaalstructuur: Number(e?.target?.value)};
+              setFloorplan(updatedFloorPlan);
+            }}
             className="mt-1"
           />
         </div>
@@ -392,7 +431,7 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
           <Input
             id="itemName"
             value={newItemName}
-            onChange={(e) => setNewItemName(e.target.value)}
+            onChange={(e) => setNewItemName(e?.target?.value)}
             className="mt-1"
           />
         </div>
@@ -402,7 +441,7 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
             id="itemWidth"
             type="number"
             value={newItemWidth}
-            onChange={(e) => setNewItemWidth(Number(e.target.value))}
+            onChange={(e) => setNewItemWidth(Number(e?.target?.value))}
             className="mt-1"
           />
         </div>
@@ -414,13 +453,18 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
             id="itemDistance"
             type="number"
             value={newItemDistance}
-            onChange={(e) => setNewItemDistance(Number(e.target.value))}
+            onChange={(e) => setNewItemDistance(Number(e?.target?.value))}
             className="mt-1"
           />
         </div>
         <div className="col-span-2">
           <Button onClick={editingItem ? handleUpdateItem : handleAddItem} className="w-full mt-2">
             {editingItem ? 'Update item' : 'Voeg item toe'}
+          </Button>
+        </div>
+        <div className="col-span-2">
+          <Button onClick={handleSaveData} className="w-full mt-2">
+            Save Data
           </Button>
         </div>
       </div>
@@ -436,22 +480,26 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
           </TableRow>
         </TableHeader>
         <TableBody>
-          {floorplan.items[selectedSide].map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>{item.naam}</TableCell>
-              <TableCell>{item.type}</TableCell>
-              <TableCell>{item.breedte}</TableCell>
-              <TableCell>{item.afstandNaarLinks}</TableCell>
-              <TableCell>
-                <Button onClick={() => handleEditItem(item)} className="mr-2">
-                  Bewerk
-                </Button>
-                <Button onClick={() => handleDeleteItem(item.id)} variant="destructive">
-                  Verwijder
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+          {floorplan?.items &&
+            (Object.keys(floorplan.items) as Side[])?.map((side) =>
+              floorplan.items?.[side]?.map((item) => (
+                <TableRow key={item?.id}>
+                  <TableCell>{item?.naam}</TableCell>
+                  <TableCell>{item?.type}</TableCell>
+                  <TableCell>{item?.breedte}</TableCell>
+                  <TableCell>{item?.afstandNaarLinks}</TableCell>
+                  <TableCell>
+                    <Button onClick={() => handleEditItem(item)} className="mr-2">
+                      Bewerk
+                    </Button>
+                    <Button onClick={() => handleDeleteItem(item?.id, side)} variant="destructive">
+                      Verwijder
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              )
+            )
+          )}
         </TableBody>
       </Table>
 
@@ -465,8 +513,8 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
         <rect
           x={padding}
           y={padding}
-          width={floorplan.breedte}
-          height={floorplan.lengte}
+          width={floorplan?.breedte}
+          height={floorplan?.lengte}
           fill="none"
           stroke="black"
           strokeWidth="60"
@@ -477,58 +525,58 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
           {/* Width arrow and label */}
           <line
             x1={padding}
-            y1={padding + floorplan.lengte * 0.75}
-            x2={padding + floorplan.breedte}
-            y2={padding + floorplan.lengte * 0.75}
+            y1={padding + floorplan?.lengte * 0.75}
+            x2={padding + floorplan?.breedte}
+            y2={padding + floorplan?.lengte * 0.75}
             stroke="black"
             strokeWidth="10"
             markerEnd="url(#arrowhead)"
           />
           <text
-            x={padding + floorplan.breedte / 2}
-            y={padding + floorplan.lengte * 0.75 - 150}
+            x={padding + floorplan?.breedte / 2}
+            y={padding + floorplan?.lengte * 0.75 - 150}
             textAnchor="middle"
             dominantBaseline="middle"
             fontSize={360}
             fill="black"
           >
-            {`${floorplan.breedte} mm`}
+            {`${floorplan?.breedte} mm`}
           </text>
         </g>
         <g>
           {/* Length arrow and label */}
           <line
-            x1={padding + floorplan.breedte * 0.25}
+            x1={padding + floorplan?.breedte * 0.25}
             y1={padding}
-            x2={padding + floorplan.breedte * 0.25}
-            y2={padding + floorplan.lengte}
+            x2={padding + floorplan?.breedte * 0.25}
+            y2={padding + floorplan?.lengte}
             stroke="black"
             strokeWidth="10"
             markerEnd="url(#arrowhead)"
           />
           <text
-            x={padding + floorplan.breedte * 0.25 - 150}
-            y={padding + floorplan.lengte / 2}
+            x={padding + floorplan?.breedte * 0.25 - 150}
+            y={padding + floorplan?.lengte / 2}
             textAnchor="middle"
             dominantBaseline="middle"
             fontSize={360}
             fill="black"
-            transform={`rotate(-90, ${padding + floorplan.breedte * 0.25 - 150}, ${padding + floorplan.lengte / 2})`}
+            transform={`rotate(-90, ${padding + floorplan?.breedte * 0.25 - 150}, ${padding + floorplan?.lengte / 2})`}
           >
-            {`${floorplan.lengte} mm`}
+            {`${floorplan?.lengte} mm`}
           </text>
         </g>
 
         {/* Naam label in the center */}
         <text
-          x={padding + floorplan.breedte / 2}
-          y={padding + floorplan.lengte / 2}
+          x={padding + floorplan?.breedte / 2}
+          y={padding + floorplan?.lengte / 2}
           textAnchor="middle"
           dominantBaseline="middle"
           fontSize={480}
           fill="black"
         >
-          {floorplan.naam}
+          {floorplan?.naam}
         </text>
 
         {/* Arrowhead definition */}
@@ -547,8 +595,8 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
 
         {/* Side labels */}
         <text
-          x={padding + floorplan.breedte / 2}
-          y={padding + floorplan.breedteStaalstructuur + 100}
+          x={padding + floorplan?.breedte / 2}
+          y={padding + floorplan?.breedteStaalstructuur + 100}
           textAnchor="middle"
           dominantBaseline="hanging"
           fontSize={360}
@@ -557,30 +605,30 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
           A
         </text>
         <text
-          x={svgWidth - padding - floorplan.breedteStaalstructuur - 100}
-          y={padding + floorplan.lengte / 2}
+          x={svgWidth - padding - floorplan?.breedteStaalstructuur - 100}
+          y={padding + floorplan?.lengte / 2}
           textAnchor="middle"
           dominantBaseline="middle"
           fontSize={360}
           fill="black"
-          transform={`rotate(90, ${svgWidth - padding - floorplan.breedteStaalstructuur - 100}, ${padding + floorplan.lengte / 2})`}
+          transform={`rotate(90, ${svgWidth - padding - floorplan?.breedteStaalstructuur - 100}, ${padding + floorplan?.lengte / 2})`}
         >
           B
         </text>
         <text
-          x={padding + floorplan.breedteStaalstructuur + 100}
-          y={padding + floorplan.lengte / 2}
+          x={padding + floorplan?.breedteStaalstructuur + 100}
+          y={padding + floorplan?.lengte / 2}
           textAnchor="middle"
           dominantBaseline="middle"
           fontSize={360}
           fill="black"
-          transform={`rotate(-90, ${padding + floorplan.breedteStaalstructuur + 100}, ${padding + floorplan.lengte / 2})`}
+          transform={`rotate(-90, ${padding + floorplan?.breedteStaalstructuur + 100}, ${padding + floorplan?.lengte / 2})`}
         >
           C
         </text>
         <text
-          x={padding + floorplan.breedte / 2}
-          y={svgHeight - padding - floorplan.breedteStaalstructuur - 100}
+          x={padding + floorplan?.breedte / 2}
+          y={svgHeight - padding - floorplan?.breedteStaalstructuur - 100}
           textAnchor="middle"
           dominantBaseline="alphabetic"
           fontSize={360}
@@ -590,8 +638,8 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan }: { ini
         </text>
 
         {/* Draw items */}
-        {Object.entries(floorplan.items).map(([side, items]) =>
-          items.map(item => drawItem(item, side as Side))
+        {Object.entries(floorplan?.items ?? {}).map(([side, items]) =>
+          items?.map(item => drawItem(item, side as Side))
         )}
 
         {/* Draw measurement lines */}
