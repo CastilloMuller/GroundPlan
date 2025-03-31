@@ -611,7 +611,7 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan, userId 
           dominantBaseline="middle"
           fontSize={360}
           fill="black"
-          transform={`rotate(90, ${svgWidth - padding - floorplan?.breedteStaalstructuur - 100}, ${padding + floorplan?.lengte / 2})`}
+          transform={`rotate(0, ${svgWidth - padding - floorplan?.breedteStaalstructuur - 100}, ${padding + floorplan?.lengte / 2})`}
         >
           B
         </text>
@@ -622,7 +622,7 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan, userId 
           dominantBaseline="middle"
           fontSize={360}
           fill="black"
-          transform={`rotate(-90, ${padding + floorplan?.breedteStaalstructuur + 100}, ${padding + floorplan?.lengte / 2})`}
+          transform={`rotate(0, ${padding + floorplan?.breedteStaalstructuur + 100}, ${padding + floorplan?.lengte / 2})`}
         >
           C
         </text>
