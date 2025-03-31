@@ -358,7 +358,7 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan, userId 
           />
         </div>
         <div>
-          <Label htmlFor="breedte" className="text-sm font-medium text-gray-700">Breedte (mm)</Label>
+          <Label htmlFor="breedte" className="text-sm font-medium text-gray-700">Breedte staalconstructie (mm)</Label>
           <Input
             id="breedte"
             type="number"
@@ -371,7 +371,7 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan, userId 
           />
         </div>
         <div>
-          <Label htmlFor="lengte" className="text-sm font-medium text-gray-700">Lengte (mm)</Label>
+          <Label htmlFor="lengte" className="text-sm font-medium text-gray-700">Lengte staalconstructie (mm)</Label>
           <Input
             id="lengte"
             type="number"
@@ -384,7 +384,7 @@ export default function Grondplan({ initialFloorplan = defaultFloorplan, userId 
             />
         </div>
         <div>
-          <Label htmlFor="breedteStaalstructuur" className="text-sm font-medium text-gray-700">Breedte staalstructuur (mm)</Label>
+          <Label htmlFor="breedteStaalstructuur" className="text-sm font-medium text-gray-700">Breedte profielen staalstructuur (mm)</Label>
           <Input
             id="breedteStaalstructuur"
             type="number"
